@@ -1578,6 +1578,11 @@ public class JetDiagnosticsTestGenerated extends AbstractJetDiagnosticsTest {
                 doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/kt3444.kt");
             }
             
+            @TestMetadata("kt3501.kt")
+            public void testKt3501() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/kt3501.kt");
+            }
+            
             @TestMetadata("kt510.kt")
             public void testKt510() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/kt510.kt");
@@ -1611,6 +1616,11 @@ public class JetDiagnosticsTestGenerated extends AbstractJetDiagnosticsTest {
             @TestMetadata("kt897.kt")
             public void testKt897() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/kt897.kt");
+            }
+            
+            @TestMetadata("localClasses.kt")
+            public void testLocalClasses() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/localClasses.kt");
             }
             
             @TestMetadata("propertiesOrderInPackage.kt")
