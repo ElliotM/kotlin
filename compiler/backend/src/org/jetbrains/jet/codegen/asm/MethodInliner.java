@@ -155,7 +155,7 @@ public class MethodInliner {
                     MethodInliner inliner = new MethodInliner(info.getNode(), params, parent.subInline(parent.nameGenerator.subGenerator("lambda")), info.getLambdaClassType(),
                                                               capturedRemapper);
 
-                    VarRemapper.ParamRemapper remapper = new VarRemapper.ParamRemapper(params, new VarRemapper.ShiftRemapper(valueParamShift, null));
+                    VarRemapper.ParamRemapper remapper = new VarRemapper.ParamRemapper(params, valueParamShift);
                     inliner.doTransformAndMerge(this.mv, remapper); //TODO add skipped this and receiver
 
                     Method bridge = typeMapper.mapSignature(ClosureCodegen.getInvokeFunction(info.getFunctionDescriptor())).getAsmMethod();
@@ -340,7 +340,7 @@ public class MethodInliner {
             for (ValueParameterDescriptor parameter : valueParameters) {
                 Type type = typeMapper.mapType(parameter.getType());
                 int paramIndex = index++;
-                result.add(new ParameterInfo(type, false, -1, paramIndex));
+                result.add(new ParameterInfo(type, false, paramIndex, -1));
                 if (type.getSize() == 2) {
                     result.add(ParameterInfo.STUB);
                 }
@@ -348,7 +348,7 @@ public class MethodInliner {
         } else {
             for (Type type : types) {
                 int paramIndex = index++;
-                result.add(new ParameterInfo(type, false, -1, paramIndex));
+                result.add(new ParameterInfo(type, false, paramIndex, -1));
                 if (type.getSize() == 2) {
                     result.add(ParameterInfo.STUB);
                 }
