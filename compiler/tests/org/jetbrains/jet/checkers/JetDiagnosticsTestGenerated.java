@@ -5973,6 +5973,11 @@ public class JetDiagnosticsTestGenerated extends AbstractJetDiagnosticsTest {
                     doTest("compiler/testData/diagnostics/tests/resolve/invoke/kt4204-completeNestedCallsForInvoke.kt");
                 }
                 
+                @TestMetadata("valNamedInvoke.kt")
+                public void testValNamedInvoke() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/resolve/invoke/valNamedInvoke.kt");
+                }
+                
             }
             
             @TestMetadata("compiler/testData/diagnostics/tests/resolve/nestedCalls")
