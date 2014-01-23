@@ -215,14 +215,9 @@ public class JetSourceNavigationHelper {
         }
 
         Project project = decompiledDeclaration.getProject();
-        LockBasedStorageManagerWithExceptionTracking storageManager = LockBasedStorageManagerWithExceptionTracking.create();
-        FileBasedDeclarationProviderFactory providerFactory = new FileBasedDeclarationProviderFactory(storageManager, getContainingFiles(candidates),
-                new Predicate<FqName>() {
-                    @Override
-                    public boolean apply(@Nullable FqName fqName) {
-                        return KotlinBuiltIns.BUILT_INS_PACKAGE_FQ_NAME.equals(fqName);
-                    }
-                });
+
+        final List<JetFile> files = getContainingFiles(candidates);
+
         ModuleDescriptorImpl moduleDescriptor = new ModuleDescriptorImpl(Name.special("<library module>"),
                                                                          AnalyzerFacadeForJVM.DEFAULT_IMPORTS,
                                                                          PlatformToKotlinClassMap.EMPTY);
@@ -231,9 +226,25 @@ public class JetSourceNavigationHelper {
 
         KotlinCodeAnalyzer analyzer = new InjectorForLazyResolve(
                 project,
-                storageManager,
+                new FileBasedDeclarationProviderFactory.FileBaseDeclarationConfiguration() {
+                    @NotNull
+                    @Override
+                    public Collection<JetFile> getFiles() {
+                        return files;
+                    }
+
+                    @NotNull
+                    @Override
+                    public Predicate<FqName> isPackageDeclaredExternallyPredicate() {
+                        return new Predicate<FqName>() {
+                            @Override
+                            public boolean apply(@Nullable FqName fqName) {
+                                return KotlinBuiltIns.BUILT_INS_PACKAGE_FQ_NAME.equals(fqName);
+                            }
+                        };
+                    }
+                },
                 moduleDescriptor,
-                providerFactory,
                 new BindingTraceContext()).getResolveSession();
 
         for (JetNamedDeclaration candidate : candidates) {

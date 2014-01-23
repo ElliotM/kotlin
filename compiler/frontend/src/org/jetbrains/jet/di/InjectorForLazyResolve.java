@@ -17,11 +17,12 @@
 package org.jetbrains.jet.di;
 
 import com.intellij.openapi.project.Project;
-import org.jetbrains.jet.storage.LockBasedStorageManagerWithExceptionTracking;
+import org.jetbrains.jet.lang.resolve.lazy.declarations.FileBasedDeclarationProviderFactory.FileBaseDeclarationConfiguration;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptorImpl;
-import org.jetbrains.jet.lang.resolve.lazy.declarations.DeclarationProviderFactory;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
+import org.jetbrains.jet.lang.resolve.lazy.declarations.FileBasedDeclarationProviderFactory;
+import org.jetbrains.jet.storage.LockBasedStorageManagerWithExceptionTracking;
 import org.jetbrains.jet.lang.resolve.calls.CallResolverExtensionProvider;
 import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
 import org.jetbrains.jet.lang.resolve.AnnotationResolver;
@@ -36,6 +37,7 @@ import org.jetbrains.jet.lang.resolve.QualifiedExpressionResolver;
 import org.jetbrains.jet.lang.resolve.calls.CandidateResolver;
 import org.jetbrains.jet.lang.psi.JetImportsFactory;
 import org.jetbrains.jet.lang.resolve.lazy.ScopeProvider;
+import org.jetbrains.jet.storage.ExceptionTracker;
 import org.jetbrains.annotations.NotNull;
 import javax.annotation.PreDestroy;
 
@@ -44,11 +46,12 @@ import javax.annotation.PreDestroy;
 public class InjectorForLazyResolve {
     
     private final Project project;
-    private final LockBasedStorageManagerWithExceptionTracking lockBasedStorageManagerWithExceptionTracking;
+    private final FileBaseDeclarationConfiguration fileBaseDeclarationConfiguration;
     private final ModuleDescriptorImpl moduleDescriptor;
-    private final DeclarationProviderFactory declarationProviderFactory;
     private final BindingTrace bindingTrace;
     private final ResolveSession resolveSession;
+    private final FileBasedDeclarationProviderFactory fileBasedDeclarationProviderFactory;
+    private final LockBasedStorageManagerWithExceptionTracking lockBasedStorageManagerWithExceptionTracking;
     private final CallResolverExtensionProvider callResolverExtensionProvider;
     private final PlatformToKotlinClassMap platformToKotlinClassMap;
     private final AnnotationResolver annotationResolver;
@@ -63,20 +66,22 @@ public class InjectorForLazyResolve {
     private final CandidateResolver candidateResolver;
     private final JetImportsFactory jetImportsFactory;
     private final ScopeProvider scopeProvider;
+    private final ExceptionTracker exceptionTracker;
     
     public InjectorForLazyResolve(
         @NotNull Project project,
-        @NotNull LockBasedStorageManagerWithExceptionTracking lockBasedStorageManagerWithExceptionTracking,
+        @NotNull FileBaseDeclarationConfiguration fileBaseDeclarationConfiguration,
         @NotNull ModuleDescriptorImpl moduleDescriptor,
-        @NotNull DeclarationProviderFactory declarationProviderFactory,
         @NotNull BindingTrace bindingTrace
     ) {
         this.project = project;
-        this.lockBasedStorageManagerWithExceptionTracking = lockBasedStorageManagerWithExceptionTracking;
+        this.fileBaseDeclarationConfiguration = fileBaseDeclarationConfiguration;
         this.moduleDescriptor = moduleDescriptor;
-        this.declarationProviderFactory = declarationProviderFactory;
         this.bindingTrace = bindingTrace;
-        this.resolveSession = new ResolveSession(project, lockBasedStorageManagerWithExceptionTracking, moduleDescriptor, declarationProviderFactory, bindingTrace);
+        this.exceptionTracker = new ExceptionTracker();
+        this.lockBasedStorageManagerWithExceptionTracking = new LockBasedStorageManagerWithExceptionTracking(exceptionTracker);
+        this.fileBasedDeclarationProviderFactory = new FileBasedDeclarationProviderFactory(lockBasedStorageManagerWithExceptionTracking, fileBaseDeclarationConfiguration);
+        this.resolveSession = new ResolveSession(lockBasedStorageManagerWithExceptionTracking, moduleDescriptor, fileBasedDeclarationProviderFactory, bindingTrace);
         this.callResolverExtensionProvider = new CallResolverExtensionProvider();
         this.platformToKotlinClassMap = moduleDescriptor.getPlatformToKotlinClassMap();
         this.annotationResolver = new AnnotationResolver();

@@ -24,6 +24,7 @@ import org.jetbrains.jet.codegen.intrinsics.IntrinsicMethods;
 import org.jetbrains.jet.codegen.state.GenerationState;
 import org.jetbrains.jet.codegen.state.JetTypeMapper;
 import org.jetbrains.jet.di.DependencyInjectorGenerator;
+import org.jetbrains.jet.di.FileBasedDeclarationConfigurationWithJava;
 import org.jetbrains.jet.di.GivenExpression;
 import org.jetbrains.jet.di.InjectorForTopDownAnalyzer;
 import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
@@ -39,9 +40,11 @@ import org.jetbrains.jet.lang.resolve.java.resolver.*;
 import org.jetbrains.jet.lang.resolve.kotlin.VirtualFileFinder;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.lazy.declarations.DeclarationProviderFactory;
+import org.jetbrains.jet.lang.resolve.lazy.declarations.FileBasedDeclarationProviderFactory;
 import org.jetbrains.jet.lang.types.DependencyClassByQualifiedNameResolverDummyImpl;
 import org.jetbrains.jet.lang.types.expressions.ExpressionTypingServices;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
+import org.jetbrains.jet.storage.LazyResolveStorageManager;
 import org.jetbrains.jet.storage.LockBasedStorageManager;
 import org.jetbrains.jet.storage.LockBasedStorageManagerWithExceptionTracking;
 import org.jetbrains.jet.storage.StorageManager;
@@ -79,7 +82,8 @@ public class GenerateInjectors {
                 generateTestInjector(),
                 generateInjectorForJvmCodegen(),
                 generateInjectorForLazyResolve(),
-                generateInjectorForBodyResolve()
+                generateInjectorForBodyResolve(),
+                generateInjectorForLazyResolveWithJava()
         );
     }
 
@@ -87,17 +91,54 @@ public class GenerateInjectors {
         DependencyInjectorGenerator generator = new DependencyInjectorGenerator();
 
         generator.addParameter(Project.class);
-        generator.addParameter(LockBasedStorageManagerWithExceptionTracking.class);
+        generator.addParameter(FileBasedDeclarationProviderFactory.FileBaseDeclarationConfiguration.class);
         generator.addParameter(ModuleDescriptorImpl.class);
-        generator.addParameter(DeclarationProviderFactory.class);
         generator.addParameter(BindingTrace.class);
 
         generator.addPublicField(ResolveSession.class);
 
+        generator.addField(FileBasedDeclarationProviderFactory.class);
+        generator.addField(LockBasedStorageManagerWithExceptionTracking.class);
         generator.addField(CallResolverExtensionProvider.class);
         generator.addField(false, PlatformToKotlinClassMap.class, null, new GivenExpression("moduleDescriptor.getPlatformToKotlinClassMap()"));
 
         generator.configure("compiler/frontend/src", "org.jetbrains.jet.di", "InjectorForLazyResolve", GenerateInjectors.class);
+        return generator;
+    }
+
+    private static DependencyInjectorGenerator generateInjectorForLazyResolveWithJava() throws IOException {
+        DependencyInjectorGenerator generator = new DependencyInjectorGenerator();
+
+        // Parameters
+        generator.addParameter(Project.class);
+        generator.addParameter(FileBasedDeclarationProviderFactory.FileBaseDeclarationConfiguration.class);
+        generator.addParameter(LockBasedStorageManagerWithExceptionTracking.class);
+
+        // Fields
+        generator.addPublicField(ResolveSession.class);
+        generator.addPublicField(JavaDescriptorResolver.class);
+
+        generator.addField(BindingTraceContext.class);
+        generator.addField(FileBasedDeclarationConfigurationWithJava.class);
+        generator.addField(CallResolverExtensionProvider.class);
+        generator.addField(JavaClassFinderImpl.class);
+        generator.addField(TraceBasedExternalSignatureResolver.class);
+        generator.addField(LazyResolveBasedCache.class);
+        generator.addField(TraceBasedErrorReporter.class);
+        generator.addField(PsiBasedMethodSignatureChecker.class);
+        generator.addField(PsiBasedExternalAnnotationResolver.class);
+
+        generator.addField(false, PlatformToKotlinClassMap.class, null, new GivenExpression("module.getPlatformToKotlinClassMap()"));
+
+        generator.addField(JavaPackageFragmentProviderImpl.class);
+        generator.addField(false, VirtualFileFinder.class, "virtualFileFinder",
+                           new GivenExpression(VirtualFileFinder.class.getName() + ".SERVICE.getInstance(project)"));
+
+        generator.addField(true, ModuleDescriptorImpl.class, "module",
+                           new GivenExpression("org.jetbrains.jet.lang.resolve.java.AnalyzerFacadeForJVM.createJavaModule(\"<fake-jdr-module>\")"));
+
+        generator.configure("compiler/frontend.java/src", "org.jetbrains.jet.di", "InjectorForLazyResolveWithJava",
+                            GenerateInjectors.class);
         return generator;
     }
 

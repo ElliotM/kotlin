@@ -27,6 +27,7 @@ import org.jetbrains.jet.analyzer.AnalyzerFacade;
 import org.jetbrains.jet.analyzer.AnalyzerFacadeForEverything;
 import org.jetbrains.jet.di.InjectorForJavaDescriptorResolver;
 import org.jetbrains.jet.di.InjectorForJavaDescriptorResolverUtil;
+import org.jetbrains.jet.di.InjectorForLazyResolve;
 import org.jetbrains.jet.di.InjectorForTopDownAnalyzerForJvm;
 import org.jetbrains.jet.lang.descriptors.DependencyKind;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
@@ -85,37 +86,85 @@ public enum AnalyzerFacadeForJVM implements AnalyzerFacade {
     @NotNull
     @Override
     public ResolveSession getLazyResolveSession(@NotNull Project fileProject, @NotNull Collection<JetFile> files) {
-        BindingTraceContext javaResolverTrace = new BindingTraceContext();
-        InjectorForJavaDescriptorResolver injector = InjectorForJavaDescriptorResolverUtil.create(fileProject, javaResolverTrace);
-        return createLazyResolveSession(fileProject, files, javaResolverTrace, injector, true);
+        return createLazyResolveSession(fileProject, files, true);
     }
 
     @NotNull
     public static ResolveSession createLazyResolveSession(
             @NotNull Project project,
-            @NotNull Collection<JetFile> files,
-            @NotNull BindingTrace trace,
-            @NotNull InjectorForJavaDescriptorResolver injector,
+            @NotNull final Collection<JetFile> files,
             boolean addBuiltIns
     ) {
+        BindingTraceContext javaResolverTrace = new BindingTraceContext();
+        InjectorForJavaDescriptorResolver injector = InjectorForJavaDescriptorResolverUtil.create(project, javaResolverTrace);
+
         final JavaClassFinderImpl classFinder = injector.getJavaClassFinder();
 
-        // TODO: Replace with stub declaration provider
-        LockBasedStorageManagerWithExceptionTracking storageManager = injector.getStorageManager();
-        FileBasedDeclarationProviderFactory declarationProviderFactory = new FileBasedDeclarationProviderFactory(storageManager, files, new Predicate<FqName>() {
-            @Override
-            public boolean apply(FqName fqName) {
-                return classFinder.findPackage(fqName) != null || KotlinBuiltIns.BUILT_INS_PACKAGE_FQ_NAME.equals(fqName);
-            }
-        });
+        // TODO: injector.getLockBasedStorageManager()
 
+        // TODO: Replace with stub declaration provider
         ModuleDescriptorImpl module = injector.getModule();
 
         if (addBuiltIns) {
             module.addFragmentProvider(DependencyKind.BUILT_INS, KotlinBuiltIns.getInstance().getBuiltInsModule().getPackageFragmentProvider());
         }
 
-        return new ResolveSession(project, storageManager, module, declarationProviderFactory, trace);
+        // return new ResolveSession(project, storageManager, module, declarationProviderFactory, trace);
+        return new InjectorForLazyResolve(
+                project,
+                new FileBasedDeclarationProviderFactory.FileBaseDeclarationConfiguration() {
+                    @NotNull
+                    @Override
+                    public Collection<JetFile> getFiles() {
+                        return files;
+                    }
+
+                    @NotNull
+                    @Override
+                    public Predicate<FqName> isPackageDeclaredExternallyPredicate() {
+                        return new Predicate<FqName>() {
+                            @Override
+                            public boolean apply(FqName fqName) {
+                                return classFinder.findPackage(fqName) != null || KotlinBuiltIns.BUILT_INS_PACKAGE_FQ_NAME.equals(fqName);
+                            }
+                        };
+                    }
+                },
+                module,
+                javaResolverTrace).getResolveSession();
+
+        //InjectorForLazyResolveWithJava resolveWithJava = new InjectorForLazyResolveWithJava(
+        //        project,
+        //        new FileBasedDeclarationProviderFactory.FileBaseDeclarationConfiguration() {
+        //            @NotNull
+        //            @Override
+        //            public Collection<JetFile> getFiles() {
+        //                return files;
+        //            }
+        //
+        //            @NotNull
+        //            @Override
+        //            public Predicate<FqName> isPackageDeclaredExternallyPredicate() {
+        //                return new Predicate<FqName>() {
+        //                    @Override
+        //                    public boolean apply(FqName fqName) {
+        //                        return KotlinBuiltIns.BUILT_INS_PACKAGE_FQ_NAME.equals(fqName);
+        //                    }
+        //                };
+        //            }
+        //        },
+        //        new LockBasedLazyResolveStorageManager(new LockBasedStorageManager()));
+        //
+        //resolveWithJava.getModule().addFragmentProvider(
+        //        DependencyKind.BINARIES, resolveWithJava.getJavaDescriptorResolver().getPackageFragmentProvider());
+        //
+        //if (addBuiltIns) {
+        //    resolveWithJava.getModule().addFragmentProvider(
+        //            DependencyKind.BUILT_INS,
+        //            KotlinBuiltIns.getInstance().getBuiltInsModule().getPackageFragmentProvider());
+        //}
+        //
+        //return resolveWithJava.getResolveSession();
     }
 
     @NotNull

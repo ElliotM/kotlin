@@ -80,7 +80,8 @@ public class LazyResolveTestUtil {
         InjectorForJavaDescriptorResolver injector = InjectorForJavaDescriptorResolverUtil.create(project, sharedTrace);
         support.setModule(injector.getModule());
 
-        return AnalyzerFacadeForJVM.createLazyResolveSession(project, files, sharedTrace, injector, addBuiltIns);
+        // TODO: Modification
+        return AnalyzerFacadeForJVM.createLazyResolveSession(project, files, addBuiltIns);
     }
 
     public static ModuleDescriptor resolveLazily(List<JetFile> files, JetCoreEnvironment environment) {

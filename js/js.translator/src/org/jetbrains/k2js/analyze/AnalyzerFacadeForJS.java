@@ -153,18 +153,26 @@ public final class AnalyzerFacadeForJS {
     }
 
     @NotNull
-    public static ResolveSession getLazyResolveSession(Collection<JetFile> files, Config config) {
-        LockBasedStorageManagerWithExceptionTracking storageManager = LockBasedStorageManagerWithExceptionTracking.create();
-        FileBasedDeclarationProviderFactory declarationProviderFactory = new FileBasedDeclarationProviderFactory(
-                storageManager, Config.withJsLibAdded(files, config), Predicates.<FqName>alwaysFalse());
+    public static ResolveSession getLazyResolveSession(final Collection<JetFile> files, final Config config) {
         ModuleDescriptorImpl module = createJsModule("<lazy module>");
         module.addFragmentProvider(DependencyKind.BUILT_INS, KotlinBuiltIns.getInstance().getBuiltInsModule().getPackageFragmentProvider());
 
         return new InjectorForLazyResolve(
                 config.getProject(),
-                storageManager,
+                new FileBasedDeclarationProviderFactory.FileBaseDeclarationConfiguration() {
+                    @NotNull
+                    @Override
+                    public Collection<JetFile> getFiles() {
+                        return Config.withJsLibAdded(files, config);
+                    }
+
+                    @NotNull
+                    @Override
+                    public Predicate<FqName> isPackageDeclaredExternallyPredicate() {
+                        return Predicates.<FqName>alwaysFalse();
+                    }
+                },
                 module,
-                declarationProviderFactory,
                 new BindingTraceContext()).getResolveSession();
     }
 

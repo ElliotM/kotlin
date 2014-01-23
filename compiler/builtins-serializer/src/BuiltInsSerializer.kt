@@ -68,9 +68,8 @@ public class BuiltInsSerializer(val out: PrintStream?) {
         val files = environment.getSourceFiles() ?: error("No source files in $sourceRoots")
 
         val project = environment.getProject()
-        val trace = BindingTraceContext()
-        val session = AnalyzerFacadeForJVM.createLazyResolveSession(project, files, trace,
-                                                                    InjectorForJavaDescriptorResolverUtil.create(project, trace), false)
+
+        val session = AnalyzerFacadeForJVM.createLazyResolveSession(project, files, false)
         val module = session.getModuleDescriptor() ?: error("No module resolved for $sourceRoots")
 
         val fqName = KotlinBuiltIns.BUILT_INS_PACKAGE_FQ_NAME

@@ -46,9 +46,7 @@ public class LockBasedLazyResolveStorageManager implements LazyResolveStorageMan
 
     @Override
     @NotNull
-    public <K, V> MemoizedFunctionToNotNull<K, V> createWeaklyRetainedMemoizedFunction(
-            @NotNull Function1<K, V> compute
-    ) {
+    public <K, V> MemoizedFunctionToNotNull<K, V> createWeaklyRetainedMemoizedFunction(@NotNull Function1<K, V> compute) {
         return storageManager.createMemoizedFunction(compute, new ConcurrentWeakValueHashMap<K, Object>());
     }
 

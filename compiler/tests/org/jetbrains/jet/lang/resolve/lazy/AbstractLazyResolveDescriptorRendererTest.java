@@ -16,6 +16,8 @@
 
 package org.jetbrains.jet.lang.resolve.lazy;
 
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.impl.DocumentImpl;
@@ -56,14 +58,27 @@ public abstract class AbstractLazyResolveDescriptorRendererTest extends KotlinTe
         String fileText = FileUtil.loadFile(new File(testFile), true);
 
         JetFile psiFile = JetPsiFactory.createFile(getProject(), fileText);
-        Collection<JetFile> files = Lists.newArrayList(psiFile);
+        final Collection<JetFile> files = Lists.newArrayList(psiFile);
 
         final ModuleDescriptorImpl lazyModule = AnalyzerFacadeForJVM.createJavaModule("<lazy module>");
         lazyModule.addFragmentProvider(DependencyKind.BUILT_INS, KotlinBuiltIns.getInstance().getBuiltInsModule().getPackageFragmentProvider());
-        LockBasedStorageManagerWithExceptionTracking storageManager = LockBasedStorageManagerWithExceptionTracking.create();
+
         final ResolveSession resolveSession = new InjectorForLazyResolve(
-                getProject(), storageManager, lazyModule,
-                new FileBasedDeclarationProviderFactory(storageManager, files),
+                getProject(),
+                new FileBasedDeclarationProviderFactory.FileBaseDeclarationConfiguration() {
+                    @NotNull
+                    @Override
+                    public Collection<JetFile> getFiles() {
+                        return files;
+                    }
+
+                    @NotNull
+                    @Override
+                    public Predicate<FqName> isPackageDeclaredExternallyPredicate() {
+                        return Predicates.alwaysFalse();
+                    }
+                },
+                lazyModule,
                 new BindingTraceContext()).getResolveSession();
 
         final List<DeclarationDescriptor> descriptors = new ArrayList<DeclarationDescriptor>();
