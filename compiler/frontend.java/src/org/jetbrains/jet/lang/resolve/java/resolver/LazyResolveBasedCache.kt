@@ -35,23 +35,30 @@ import org.jetbrains.jet.lang.resolve.java.structure.impl.JavaClassImpl
 
 public class LazyResolveBasedCache() : JavaResolverCache {
     private var resolveSession by Delegates.notNull<ResolveSession>()
+    private var traceBasedCache = TraceBasedJavaResolverCache()
 
     class object {
         private val LOG = Logger.getInstance(javaClass<TraceBasedJavaResolverCache>())
     }
 
-
     Inject
     public fun setSession(resolveSession: ResolveSession) {
         this.resolveSession = resolveSession
+        traceBasedCache.setTrace(this.resolveSession.getTrace())
     }
 
     override fun getClassResolvedFromSource(fqName: FqName): ClassDescriptor? {
+        val descriptor = traceBasedCache.getClassResolvedFromSource(fqName)
+        if (descriptor != null) return descriptor
+
         val classes = ResolveSessionUtils.getClassDescriptorsByFqName(resolveSession, fqName)
         return if (classes.isNotEmpty()) classes.first() else null
     }
 
     override fun getMethod(method: JavaMethod): SimpleFunctionDescriptor? {
+        val descriptor = traceBasedCache.getMethod(method)
+        if (descriptor != null) return descriptor
+
         val classFqName = method.getContainingClass().getFqName()
         if (classFqName == null) return null
 
@@ -64,21 +71,24 @@ public class LazyResolveBasedCache() : JavaResolverCache {
         return if (functions.isNotEmpty()) (functions.first() as SimpleFunctionDescriptor) else null
     }
 
-    override fun getConstructor(constructor: JavaElement): ConstructorDescriptor? = null
+    override fun getConstructor(constructor: JavaElement): ConstructorDescriptor? = traceBasedCache.getConstructor(constructor)
 
     override fun getClass(javaClass: JavaClass): ClassDescriptor? {
-        return null
+        return traceBasedCache.getClass(javaClass) ?: null
     }
 
     override fun recordMethod(method: JavaMethod, descriptor: SimpleFunctionDescriptor) {
+        traceBasedCache.recordMethod(method, descriptor)
     }
 
     override fun recordConstructor(element: JavaElement, descriptor: ConstructorDescriptor) {
+        traceBasedCache.recordConstructor(element, descriptor)
     }
 
     override fun recordField(field: JavaField, descriptor: PropertyDescriptor) {
+        traceBasedCache.recordField(field, descriptor)
     }
-
     override fun recordClass(javaClass: JavaClass, descriptor: ClassDescriptor) {
+        traceBasedCache.recordClass(javaClass, descriptor)
     }
 }
