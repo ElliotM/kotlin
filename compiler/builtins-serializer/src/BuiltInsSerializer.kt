@@ -39,8 +39,6 @@ import org.jetbrains.jet.cli.common.CLIConfigurationKeys
 import org.jetbrains.jet.config.CommonConfigurationKeys
 import org.jetbrains.jet.cli.common.messages.MessageCollector
 import org.jetbrains.jet.lang.resolve.java.AnalyzerFacadeForJVM
-import org.jetbrains.jet.lang.resolve.BindingTraceContext
-import org.jetbrains.jet.di.InjectorForJavaDescriptorResolverUtil
 
 public class BuiltInsSerializer(val out: PrintStream?) {
     private var totalSize = 0
