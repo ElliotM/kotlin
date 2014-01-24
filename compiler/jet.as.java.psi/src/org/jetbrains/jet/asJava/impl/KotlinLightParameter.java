@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.asJava;
+package org.jetbrains.jet.asJava.impl;
 
 import com.intellij.psi.PsiParameter;
 import org.jetbrains.annotations.NotNull;
@@ -28,7 +28,7 @@ import org.jetbrains.jet.plugin.JetLanguage;
 
 import java.util.List;
 
-public class KotlinLightParameter extends LightParameter implements KotlinLightElement<JetParameter, PsiParameter> {
+class KotlinLightParameter extends LightParameter implements KotlinLightElement<JetParameter, PsiParameter> {
     private static String getName(PsiParameter delegate, int index) {
         String name = delegate.getName();
         return name != null ? name : "p" + index;

@@ -40,6 +40,7 @@ import org.jetbrains.jet.lang.psi.JetProperty
 import com.intellij.psi.PsiTypeParameter
 import org.jetbrains.jet.lang.psi.JetClassOrObject
 import com.intellij.psi.impl.light.LightTypeParameterListBuilder
+import org.jetbrains.jet.asJava.impl.KotlinLightClassFactory
 
 public class KotlinLightMethodForDeclaration(
         manager: PsiManager, override val delegate: PsiMethod, override val origin: JetDeclaration, containingClass: PsiClass
@@ -51,7 +52,7 @@ public class KotlinLightMethodForDeclaration(
             val parameterBuilder = LightParameterListBuilder(getManager(), JetLanguage.INSTANCE)
 
             for ((index, parameter) in delegate.getParameterList().getParameters().withIndices()) {
-                parameterBuilder.addParameter(KotlinLightParameter(parameter, index, this))
+                parameterBuilder.addParameter(KotlinLightClassFactory.createLightParameter(parameter, index, this))
             }
 
             CachedValueProvider.Result.create(parameterBuilder, PsiModificationTracker.OUT_OF_CODE_BLOCK_MODIFICATION_COUNT)

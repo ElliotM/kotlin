@@ -29,9 +29,9 @@ import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.containers.MultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.asJava.KotlinLightClassForExplicitDeclaration;
 import org.jetbrains.jet.asJava.LightClassConstructionContext;
 import org.jetbrains.jet.asJava.LightClassGenerationSupport;
+import org.jetbrains.jet.asJava.impl.KotlinLightClassFactory;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.PackageViewDescriptor;
@@ -253,7 +253,7 @@ public class IDELightClassGenerationSupport extends LightClassGenerationSupport 
             return JetSourceNavigationHelper.getOriginalClass(classOrObject);
         }
 
-        return  KotlinLightClassForExplicitDeclaration.create(classOrObject.getManager(), classOrObject);
+        return KotlinLightClassFactory.instance$.create(classOrObject);
     }
 
     @NotNull
