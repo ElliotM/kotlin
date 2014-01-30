@@ -189,12 +189,12 @@ public class KotlinJavaFileStubProvider<T extends WithFileStub> implements Cache
                                 PsiElement commonParent = PsiTreeUtil.findCommonParent(generatedClassOrObject, classOrObject);
                                 boolean result = commonParent != null && !(commonParent instanceof PsiFile);
 
-                                if (result) {
-                                    System.out.println("OK: " + generatedClassOrObject.getText());
-                                }
-                                else {
-                                    System.out.println("FAIL: " + generatedClassOrObject.getText());
-                                }
+                                //if (result) {
+                                //    System.out.println("OK: " + generatedClassOrObject.getText());
+                                //}
+                                //else {
+                                //    System.out.println("FAIL: " + generatedClassOrObject.getText());
+                                //}
 
                                 return result;
                             }
