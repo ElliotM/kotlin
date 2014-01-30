@@ -131,6 +131,11 @@ public class CompileKotlinAgainstInlineKotlinTestGenerated extends AbstractCompi
         doBoxTest("compiler/testData/codegen/boxInline/params");
     }
     
+    @TestMetadata("regeneratedLambdaName")
+    public void testRegeneratedLambdaName() throws Exception {
+        doBoxTest("compiler/testData/codegen/boxInline/regeneratedLambdaName");
+    }
+    
     @TestMetadata("rootConstructor")
     public void testRootConstructor() throws Exception {
         doBoxTest("compiler/testData/codegen/boxInline/rootConstructor");
