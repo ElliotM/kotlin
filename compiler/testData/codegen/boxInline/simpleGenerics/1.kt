@@ -5,7 +5,6 @@ import java.io.*
 import java.util.*
 
 fun test1(s: Long): String {
-    var result = "fail1"
     return doSmth(s)
 }
 
