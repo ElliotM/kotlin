@@ -33,6 +33,7 @@ import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
 import org.jetbrains.jet.lang.resolve.java.resolver.JavaPackageFragmentProviderImpl;
 import org.jetbrains.jet.lang.resolve.kotlin.VirtualFileFinder;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptorImpl;
+import org.jetbrains.jet.storage.ExceptionTracker;
 import org.jetbrains.jet.lang.resolve.AnnotationResolver;
 import org.jetbrains.jet.lang.resolve.calls.CallResolver;
 import org.jetbrains.jet.lang.resolve.calls.ArgumentTypeResolver;
@@ -67,7 +68,7 @@ public class InjectorForLazyResolveWithJava {
     
     private final Project project;
     private final FileBaseDeclarationConfiguration fileBaseDeclarationConfiguration;
-    private final LockBasedStorageManagerWithExceptionTracking lockBasedStorageManagerWithExceptionTracking;
+    private final LockBasedStorageManagerWithExceptionTracking storageManager;
     private final ResolveSession resolveSession;
     private final JavaDescriptorResolver javaDescriptorResolver;
     private final BindingTraceContext bindingTraceContext;
@@ -83,6 +84,7 @@ public class InjectorForLazyResolveWithJava {
     private final JavaPackageFragmentProviderImpl javaPackageFragmentProvider;
     private final VirtualFileFinder virtualFileFinder;
     private final ModuleDescriptorImpl module;
+    private final ExceptionTracker exceptionTracker;
     private final AnnotationResolver annotationResolver;
     private final CallResolver callResolver;
     private final ArgumentTypeResolver argumentTypeResolver;
@@ -111,17 +113,17 @@ public class InjectorForLazyResolveWithJava {
     
     public InjectorForLazyResolveWithJava(
         @NotNull Project project,
-        @NotNull FileBaseDeclarationConfiguration fileBaseDeclarationConfiguration,
-        @NotNull LockBasedStorageManagerWithExceptionTracking lockBasedStorageManagerWithExceptionTracking
+        @NotNull FileBaseDeclarationConfiguration fileBaseDeclarationConfiguration
     ) {
         this.project = project;
         this.fileBaseDeclarationConfiguration = fileBaseDeclarationConfiguration;
-        this.lockBasedStorageManagerWithExceptionTracking = lockBasedStorageManagerWithExceptionTracking;
+        this.exceptionTracker = new ExceptionTracker();
+        this.storageManager = new LockBasedStorageManagerWithExceptionTracking(exceptionTracker);
         this.module = org.jetbrains.jet.lang.resolve.java.AnalyzerFacadeForJVM.createJavaModule("<fake-jdr-module>");
         this.javaClassFinder = new JavaClassFinderImpl();
-        this.fileBasedDeclarationConfigurationWithJava = new FileBasedDeclarationConfigurationWithJava(lockBasedStorageManagerWithExceptionTracking, javaClassFinder, fileBaseDeclarationConfiguration);
+        this.fileBasedDeclarationConfigurationWithJava = new FileBasedDeclarationConfigurationWithJava(getStorageManager(), javaClassFinder, fileBaseDeclarationConfiguration);
         this.bindingTraceContext = new BindingTraceContext();
-        this.resolveSession = new ResolveSession(lockBasedStorageManagerWithExceptionTracking, getModule(), fileBasedDeclarationConfigurationWithJava, bindingTraceContext);
+        this.resolveSession = new ResolveSession(getStorageManager(), getModule(), fileBasedDeclarationConfigurationWithJava, bindingTraceContext);
         this.javaDescriptorResolver = new JavaDescriptorResolver();
         this.callResolverExtensionProvider = new CallResolverExtensionProvider();
         this.traceBasedExternalSignatureResolver = new TraceBasedExternalSignatureResolver();
@@ -135,7 +137,7 @@ public class InjectorForLazyResolveWithJava {
         this.annotationResolver = new AnnotationResolver();
         this.callResolver = new CallResolver();
         this.argumentTypeResolver = new ArgumentTypeResolver();
-        this.expressionTypingServices = new ExpressionTypingServices(lockBasedStorageManagerWithExceptionTracking, platformToKotlinClassMap);
+        this.expressionTypingServices = new ExpressionTypingServices(getStorageManager(), platformToKotlinClassMap);
         this.callExpressionResolver = new CallExpressionResolver();
         this.descriptorResolver = new DescriptorResolver();
         this.delegatedPropertyResolver = new DelegatedPropertyResolver();
@@ -149,7 +151,7 @@ public class InjectorForLazyResolveWithJava {
         this.javaAnnotationArgumentResolver = new JavaAnnotationArgumentResolver();
         this.javaTypeTransformer = new JavaTypeTransformer();
         this.deserializedDescriptorResolver = new DeserializedDescriptorResolver();
-        this.annotationDescriptorDeserializer = new AnnotationDescriptorDeserializer(lockBasedStorageManagerWithExceptionTracking);
+        this.annotationDescriptorDeserializer = new AnnotationDescriptorDeserializer(getStorageManager());
         this.javaFunctionResolver = new JavaFunctionResolver();
         this.javaTypeParameterResolver = new JavaTypeParameterResolver();
         this.javaValueParameterResolver = new JavaValueParameterResolver();
@@ -176,7 +178,7 @@ public class InjectorForLazyResolveWithJava {
         this.javaDescriptorResolver.setModule(module);
         this.javaDescriptorResolver.setPackageFragmentProvider(javaPackageFragmentProvider);
         this.javaDescriptorResolver.setSignatureChecker(psiBasedMethodSignatureChecker);
-        this.javaDescriptorResolver.setStorageManager(lockBasedStorageManagerWithExceptionTracking);
+        this.javaDescriptorResolver.setStorageManager(storageManager);
 
         javaClassFinder.setProject(project);
 
@@ -222,7 +224,7 @@ public class InjectorForLazyResolveWithJava {
         descriptorResolver.setAnnotationResolver(annotationResolver);
         descriptorResolver.setDelegatedPropertyResolver(delegatedPropertyResolver);
         descriptorResolver.setExpressionTypingServices(expressionTypingServices);
-        descriptorResolver.setStorageManager(lockBasedStorageManagerWithExceptionTracking);
+        descriptorResolver.setStorageManager(storageManager);
         descriptorResolver.setTypeResolver(typeResolver);
 
         delegatedPropertyResolver.setExpressionTypingServices(expressionTypingServices);
@@ -260,7 +262,7 @@ public class InjectorForLazyResolveWithJava {
         deserializedDescriptorResolver.setErrorReporter(traceBasedErrorReporter);
         deserializedDescriptorResolver.setJavaDescriptorResolver(javaDescriptorResolver);
         deserializedDescriptorResolver.setJavaPackageFragmentProvider(javaPackageFragmentProvider);
-        deserializedDescriptorResolver.setStorageManager(lockBasedStorageManagerWithExceptionTracking);
+        deserializedDescriptorResolver.setStorageManager(storageManager);
 
         annotationDescriptorDeserializer.setErrorReporter(traceBasedErrorReporter);
         annotationDescriptorDeserializer.setJavaDescriptorResolver(javaDescriptorResolver);
@@ -305,6 +307,10 @@ public class InjectorForLazyResolveWithJava {
     
     @PreDestroy
     public void destroy() {
+    }
+    
+    public LockBasedStorageManagerWithExceptionTracking getStorageManager() {
+        return this.storageManager;
     }
     
     public ResolveSession getResolveSession() {

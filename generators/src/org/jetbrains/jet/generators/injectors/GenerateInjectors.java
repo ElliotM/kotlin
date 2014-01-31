@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2013 JetBrains s.r.o.
+ * Copyright 2010-2014 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,12 +39,10 @@ import org.jetbrains.jet.lang.resolve.java.mapping.JavaToKotlinClassMap;
 import org.jetbrains.jet.lang.resolve.java.resolver.*;
 import org.jetbrains.jet.lang.resolve.kotlin.VirtualFileFinder;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
-import org.jetbrains.jet.lang.resolve.lazy.declarations.DeclarationProviderFactory;
 import org.jetbrains.jet.lang.resolve.lazy.declarations.FileBasedDeclarationProviderFactory;
 import org.jetbrains.jet.lang.types.DependencyClassByQualifiedNameResolverDummyImpl;
 import org.jetbrains.jet.lang.types.expressions.ExpressionTypingServices;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
-import org.jetbrains.jet.storage.LazyResolveStorageManager;
 import org.jetbrains.jet.storage.LockBasedStorageManager;
 import org.jetbrains.jet.storage.LockBasedStorageManagerWithExceptionTracking;
 import org.jetbrains.jet.storage.StorageManager;
@@ -112,9 +110,9 @@ public class GenerateInjectors {
         // Parameters
         generator.addParameter(Project.class);
         generator.addParameter(FileBasedDeclarationProviderFactory.FileBaseDeclarationConfiguration.class);
-        generator.addParameter(LockBasedStorageManagerWithExceptionTracking.class);
 
         // Fields
+        generator.addField(true, LockBasedStorageManagerWithExceptionTracking.class, "storageManager", null);
         generator.addPublicField(ResolveSession.class);
         generator.addPublicField(JavaDescriptorResolver.class);
 

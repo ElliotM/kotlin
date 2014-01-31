@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2013 JetBrains s.r.o.
+ * Copyright 2010-2014 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,9 +37,7 @@ import org.jetbrains.jet.lang.resolve.lazy.declarations.FileBasedDeclarationProv
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
-import org.jetbrains.jet.storage.LockBasedLazyResolveStorageManager;
 import org.jetbrains.jet.storage.LockBasedStorageManager;
-import org.jetbrains.jet.storage.LockBasedStorageManagerWithExceptionTracking;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -182,8 +180,7 @@ public enum AnalyzerFacadeForJVM implements AnalyzerFacade {
                             }
                         };
                     }
-                },
-                new LockBasedLazyResolveStorageManager(new LockBasedStorageManager()));
+                });
 
         resolveWithJava.getModule().addFragmentProvider(
                 DependencyKind.BINARIES, resolveWithJava.getJavaDescriptorResolver().getPackageFragmentProvider());
