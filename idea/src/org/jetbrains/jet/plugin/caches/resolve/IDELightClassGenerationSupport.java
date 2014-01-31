@@ -45,7 +45,7 @@ import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.plugin.libraries.JetSourceNavigationHelper;
 import org.jetbrains.jet.plugin.project.AnalyzerFacadeWithCache;
-import org.jetbrains.jet.plugin.project.CancelableResolveSession;
+import org.jetbrains.jet.plugin.project.ResolveSessionForBodies;
 import org.jetbrains.jet.plugin.stubindex.JetAllPackagesIndex;
 import org.jetbrains.jet.plugin.stubindex.JetClassByPackageIndex;
 import org.jetbrains.jet.plugin.stubindex.JetFullClassNameIndex;
@@ -98,7 +98,7 @@ public class IDELightClassGenerationSupport extends LightClassGenerationSupport 
         Profiler p = Profiler.create((USE_LAZY ? "lazy" : "eager") + " analyze for package: " + files).start();
         try {
             if (USE_LAZY) {
-                CancelableResolveSession session = AnalyzerFacadeWithCache.getLazyResolveSessionForFile(sortedFiles.get(0));
+                ResolveSessionForBodies session = AnalyzerFacadeWithCache.getLazyResolveSessionForFile(sortedFiles.get(0));
                 forceResolvePackageDeclarations(files, session);
                 return new LightClassConstructionContext(session.getBindingContext(), null);
             }
@@ -120,7 +120,7 @@ public class IDELightClassGenerationSupport extends LightClassGenerationSupport 
 
         try {
             if (USE_LAZY) {
-                CancelableResolveSession session = AnalyzerFacadeWithCache.getLazyResolveSessionForFile((JetFile) classOrObject.getContainingFile());
+                ResolveSessionForBodies session = AnalyzerFacadeWithCache.getLazyResolveSessionForFile((JetFile) classOrObject.getContainingFile());
 
                 if (JetPsiUtil.isLocal(classOrObject)) {
                     BindingContext bindingContext = session.resolveToElement(classOrObject);
