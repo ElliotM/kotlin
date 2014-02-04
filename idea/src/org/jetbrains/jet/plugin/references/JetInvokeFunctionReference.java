@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static org.jetbrains.jet.lang.resolve.BindingContext.CALL;
 import static org.jetbrains.jet.lang.resolve.BindingContext.RESOLVED_CALL;
 
 class JetInvokeFunctionReference extends JetPsiReference implements MultiRangeReference {
@@ -60,6 +61,10 @@ class JetInvokeFunctionReference extends JetPsiReference implements MultiRangeRe
 
         if (resolvedCall instanceof VariableAsFunctionResolvedCall) {
             return Collections.singleton(((VariableAsFunctionResolvedCall) resolvedCall).getResultingDescriptor());
+        }
+        Call call = context.get(CALL, calleeExpression);
+        if (call != null && resolvedCall != null && call.getCallType() == Call.CallType.INVOKE_ON_EXPR) {
+            return Collections.singleton(resolvedCall.getResultingDescriptor());
         }
         return null;
     }
