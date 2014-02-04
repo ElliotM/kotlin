@@ -18,7 +18,6 @@ package org.jetbrains.jet.codegen;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.protobuf.ExtensionRegistry;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.util.Pair;
 import com.intellij.psi.PsiElement;
@@ -43,7 +42,6 @@ import org.jetbrains.jet.descriptors.serialization.DescriptorSerializer;
 import org.jetbrains.jet.descriptors.serialization.ProtoBuf;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.impl.MutableClassDescriptor;
-import org.jetbrains.jet.lang.diagnostics.DiagnosticUtils;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
@@ -621,30 +619,58 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         }
     }
 
-    private void generateDataClassToStringIfNeeded(List<PropertyDescriptor> properties) {
+    private void generateDataClassToStringIfNeeded(@NotNull List<PropertyDescriptor> properties) {
         ClassDescriptor stringClass = KotlinBuiltIns.getInstance().getString();
-        if (getDeclaredFunctionByRawSignature(descriptor, Name.identifier("toString"), stringClass) == null) {
+        if (!hasDeclaredNonTrivialMember("toString", stringClass)) {
             generateDataClassToStringMethod(properties);
         }
     }
 
-    private void generateDataClassHashCodeIfNeeded(List<PropertyDescriptor> properties) {
+    private void generateDataClassHashCodeIfNeeded(@NotNull List<PropertyDescriptor> properties) {
         ClassDescriptor intClass = KotlinBuiltIns.getInstance().getInt();
-        if (getDeclaredFunctionByRawSignature(descriptor, Name.identifier("hashCode"), intClass) == null) {
+        if (!hasDeclaredNonTrivialMember("hashCode", intClass)) {
             generateDataClassHashCodeMethod(properties);
         }
     }
 
-    private void generateDataClassEqualsIfNeeded(List<PropertyDescriptor> properties) {
+    private void generateDataClassEqualsIfNeeded(@NotNull List<PropertyDescriptor> properties) {
         ClassDescriptor booleanClass = KotlinBuiltIns.getInstance().getBoolean();
         ClassDescriptor anyClass = KotlinBuiltIns.getInstance().getAny();
-        FunctionDescriptor equalsFunction = getDeclaredFunctionByRawSignature(descriptor, Name.identifier("equals"), booleanClass, anyClass);
-        if (equalsFunction == null) {
+        if (!hasDeclaredNonTrivialMember("equals", booleanClass, anyClass)) {
             generateDataClassEqualsMethod(properties);
         }
     }
 
-    private void generateDataClassEqualsMethod(List<PropertyDescriptor> properties) {
+    /**
+     * @return true if the class has a declared member with the given name anywhere in its hierarchy besides Any
+     */
+    private boolean hasDeclaredNonTrivialMember(
+            @NotNull String name,
+            @NotNull ClassDescriptor returnedClassifier,
+            @NotNull ClassDescriptor... valueParameterClassifiers
+    ) {
+        FunctionDescriptor function =
+                getDeclaredFunctionByRawSignature(descriptor, Name.identifier(name), returnedClassifier, valueParameterClassifiers);
+        if (function == null) {
+            return false;
+        }
+
+        if (function.getKind() == CallableMemberDescriptor.Kind.DECLARATION) {
+            return true;
+        }
+
+        for (CallableDescriptor overridden : OverridingUtil.getOverriddenDeclarations(function)) {
+            if (overridden instanceof CallableMemberDescriptor
+                && ((CallableMemberDescriptor) overridden).getKind() == CallableMemberDescriptor.Kind.DECLARATION
+                && !overridden.getContainingDeclaration().equals(KotlinBuiltIns.getInstance().getAny())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void generateDataClassEqualsMethod(@NotNull List<PropertyDescriptor> properties) {
         MethodVisitor mv = v.getVisitor().visitMethod(ACC_PUBLIC, "equals", "(Ljava/lang/Object;)Z", null, null);
         InstructionAdapter iv = new InstructionAdapter(mv);
 
@@ -698,7 +724,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         FunctionCodegen.endVisit(mv, "equals", myClass);
     }
 
-    private void generateDataClassHashCodeMethod(List<PropertyDescriptor> properties) {
+    private void generateDataClassHashCodeMethod(@NotNull List<PropertyDescriptor> properties) {
         MethodVisitor mv = v.getVisitor().visitMethod(ACC_PUBLIC, "hashCode", "()I", null, null);
         InstructionAdapter iv = new InstructionAdapter(mv);
 
@@ -744,7 +770,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         FunctionCodegen.endVisit(mv, "hashCode", myClass);
     }
 
-    private void generateDataClassToStringMethod(List<PropertyDescriptor> properties) {
+    private void generateDataClassToStringMethod(@NotNull List<PropertyDescriptor> properties) {
         MethodVisitor mv = v.getVisitor().visitMethod(ACC_PUBLIC, "toString", "()Ljava/lang/String;", null, null);
         InstructionAdapter iv = new InstructionAdapter(mv);
 
