@@ -97,16 +97,10 @@ public enum AnalyzerFacadeForJVM implements AnalyzerFacade {
     ) {
         GlobalContextImpl globalContext = ContextPackage.GlobalContext();
 
+        // TODO: Replace with stub declaration provider
         FileBasedDeclarationProviderFactory declarationProviderFactory = new FileBasedDeclarationProviderFactory(
                 globalContext.getStorageManager(),
-                files,
-                new Predicate<FqName>() {
-                    @Override
-                    public boolean apply(FqName fqName) {
-                        // TODO!
-                        return KotlinBuiltIns.BUILT_INS_PACKAGE_FQ_NAME.equals(fqName); // classFinder.findPackage(fqName) != null || KotlinBuiltIns.BUILT_INS_PACKAGE_FQ_NAME.equals(fqName);
-                    }
-                });
+                files);
 
         InjectorForLazyResolveWithJava resolveWithJava = new InjectorForLazyResolveWithJava(
                 project,

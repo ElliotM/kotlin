@@ -23,6 +23,7 @@ import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
 import org.jetbrains.jet.storage.StorageManager;
+import org.jetbrains.jet.lang.resolve.java.JavaClassFinderPackageManager;
 import org.jetbrains.jet.lang.resolve.calls.CallResolverExtensionProvider;
 import org.jetbrains.jet.lang.resolve.java.JavaClassFinderImpl;
 import org.jetbrains.jet.lang.resolve.java.resolver.TraceBasedExternalSignatureResolver;
@@ -62,6 +63,7 @@ public class InjectorForLazyResolveWithJava {
     private final ResolveSession resolveSession;
     private final JavaDescriptorResolver javaDescriptorResolver;
     private final StorageManager storageManager;
+    private final JavaClassFinderPackageManager javaClassFinderPackageManager;
     private final CallResolverExtensionProvider callResolverExtensionProvider;
     private final JavaClassFinderImpl javaClassFinder;
     private final TraceBasedExternalSignatureResolver traceBasedExternalSignatureResolver;
@@ -99,9 +101,10 @@ public class InjectorForLazyResolveWithJava {
         this.declarationProviderFactory = declarationProviderFactory;
         this.bindingTrace = bindingTrace;
         this.module = org.jetbrains.jet.lang.resolve.java.AnalyzerFacadeForJVM.createJavaModule("<fake-jdr-module>");
-        this.resolveSession = new ResolveSession(project, globalContext, getModule(), declarationProviderFactory, bindingTrace);
-        this.storageManager = globalContext.getStorageManager();
         this.javaClassFinder = new JavaClassFinderImpl();
+        this.javaClassFinderPackageManager = new JavaClassFinderPackageManager(javaClassFinder);
+        this.resolveSession = new ResolveSession(project, globalContext, getModule(), declarationProviderFactory, bindingTrace, javaClassFinderPackageManager);
+        this.storageManager = globalContext.getStorageManager();
         this.psiBasedExternalAnnotationResolver = new PsiBasedExternalAnnotationResolver();
         this.traceBasedExternalSignatureResolver = new TraceBasedExternalSignatureResolver();
         this.traceBasedErrorReporter = new TraceBasedErrorReporter();

@@ -21,6 +21,7 @@ import org.jetbrains.jet.context.GlobalContextImpl;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptorImpl;
 import org.jetbrains.jet.lang.resolve.lazy.declarations.DeclarationProviderFactory;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
+import org.jetbrains.jet.lang.resolve.lazy.ExternallyDeclaredPackageManager;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.calls.CallResolverExtensionProvider;
 import org.jetbrains.jet.storage.StorageManager;
@@ -49,6 +50,7 @@ public class InjectorForLazyResolve {
     private final ModuleDescriptorImpl moduleDescriptor;
     private final DeclarationProviderFactory declarationProviderFactory;
     private final BindingTrace bindingTrace;
+    private final ExternallyDeclaredPackageManager externallyDeclaredPackageManager;
     private final ResolveSession resolveSession;
     private final CallResolverExtensionProvider callResolverExtensionProvider;
     private final StorageManager storageManager;
@@ -71,14 +73,16 @@ public class InjectorForLazyResolve {
         @NotNull GlobalContextImpl globalContext,
         @NotNull ModuleDescriptorImpl moduleDescriptor,
         @NotNull DeclarationProviderFactory declarationProviderFactory,
-        @NotNull BindingTrace bindingTrace
+        @NotNull BindingTrace bindingTrace,
+        @NotNull ExternallyDeclaredPackageManager externallyDeclaredPackageManager
     ) {
         this.project = project;
         this.globalContext = globalContext;
         this.moduleDescriptor = moduleDescriptor;
         this.declarationProviderFactory = declarationProviderFactory;
         this.bindingTrace = bindingTrace;
-        this.resolveSession = new ResolveSession(project, globalContext, moduleDescriptor, declarationProviderFactory, bindingTrace);
+        this.externallyDeclaredPackageManager = externallyDeclaredPackageManager;
+        this.resolveSession = new ResolveSession(project, globalContext, moduleDescriptor, declarationProviderFactory, bindingTrace, externallyDeclaredPackageManager);
         this.callResolverExtensionProvider = new CallResolverExtensionProvider();
         this.storageManager = globalContext.getStorageManager();
         this.platformToKotlinClassMap = moduleDescriptor.getPlatformToKotlinClassMap();

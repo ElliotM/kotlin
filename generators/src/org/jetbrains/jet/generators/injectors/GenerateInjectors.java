@@ -35,10 +35,12 @@ import org.jetbrains.jet.lang.resolve.*;
 import org.jetbrains.jet.lang.resolve.calls.CallResolver;
 import org.jetbrains.jet.lang.resolve.calls.CallResolverExtensionProvider;
 import org.jetbrains.jet.lang.resolve.java.JavaClassFinderImpl;
+import org.jetbrains.jet.lang.resolve.java.JavaClassFinderPackageManager;
 import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
 import org.jetbrains.jet.lang.resolve.java.mapping.JavaToKotlinClassMap;
 import org.jetbrains.jet.lang.resolve.java.resolver.*;
 import org.jetbrains.jet.lang.resolve.kotlin.VirtualFileFinder;
+import org.jetbrains.jet.lang.resolve.lazy.ExternallyDeclaredPackageManager;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.lazy.declarations.DeclarationProviderFactory;
 import org.jetbrains.jet.lang.types.DependencyClassByQualifiedNameResolverDummyImpl;
@@ -92,6 +94,7 @@ public class GenerateInjectors {
         generator.addParameter(ModuleDescriptorImpl.class);
         generator.addParameter(DeclarationProviderFactory.class);
         generator.addParameter(BindingTrace.class);
+        generator.addParameter(ExternallyDeclaredPackageManager.class);
 
         generator.addPublicField(ResolveSession.class);
 
@@ -117,6 +120,7 @@ public class GenerateInjectors {
         generator.addPublicField(JavaDescriptorResolver.class);
 
         generator.addField(false, StorageManager.class, null, new GivenExpression("globalContext.getStorageManager()"));
+        generator.addField(JavaClassFinderPackageManager.class);
         generator.addField(CallResolverExtensionProvider.class);
         generator.addField(JavaClassFinderImpl.class);
         generator.addField(TraceBasedExternalSignatureResolver.class);
