@@ -31,7 +31,7 @@ import org.jetbrains.jet.lang.resolve.java.resolver.TraceBasedErrorReporter;
 import org.jetbrains.jet.lang.resolve.java.resolver.PsiBasedMethodSignatureChecker;
 import org.jetbrains.jet.lang.resolve.java.resolver.PsiBasedExternalAnnotationResolver;
 import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
-import org.jetbrains.jet.lang.resolve.java.resolver.JavaPackageFragmentProviderImpl;
+import org.jetbrains.jet.lang.resolve.java.resolver.JavaPackageFragmentProvider;
 import org.jetbrains.jet.lang.resolve.kotlin.VirtualFileFinder;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptorImpl;
 import org.jetbrains.jet.lang.resolve.AnnotationResolver;
@@ -46,19 +46,8 @@ import org.jetbrains.jet.lang.resolve.QualifiedExpressionResolver;
 import org.jetbrains.jet.lang.resolve.calls.CandidateResolver;
 import org.jetbrains.jet.lang.psi.JetImportsFactory;
 import org.jetbrains.jet.lang.resolve.lazy.ScopeProvider;
-import org.jetbrains.jet.lang.resolve.java.resolver.JavaClassResolver;
-import org.jetbrains.jet.lang.resolve.java.resolver.JavaAnnotationResolver;
-import org.jetbrains.jet.lang.resolve.java.resolver.JavaAnnotationArgumentResolver;
-import org.jetbrains.jet.lang.resolve.java.resolver.JavaTypeTransformer;
 import org.jetbrains.jet.lang.resolve.kotlin.DeserializedDescriptorResolver;
 import org.jetbrains.jet.lang.resolve.kotlin.AnnotationDescriptorDeserializer;
-import org.jetbrains.jet.lang.resolve.java.resolver.JavaFunctionResolver;
-import org.jetbrains.jet.lang.resolve.java.resolver.JavaTypeParameterResolver;
-import org.jetbrains.jet.lang.resolve.java.resolver.JavaValueParameterResolver;
-import org.jetbrains.jet.lang.resolve.java.resolver.JavaMemberResolver;
-import org.jetbrains.jet.lang.resolve.java.resolver.JavaConstructorResolver;
-import org.jetbrains.jet.lang.resolve.java.resolver.JavaPropertyResolver;
-import org.jetbrains.jet.lang.resolve.java.resolver.JavaSupertypeResolver;
 import org.jetbrains.annotations.NotNull;
 import javax.annotation.PreDestroy;
 
@@ -81,7 +70,7 @@ public class InjectorForLazyResolveWithJava {
     private final PsiBasedMethodSignatureChecker psiBasedMethodSignatureChecker;
     private final PsiBasedExternalAnnotationResolver psiBasedExternalAnnotationResolver;
     private final PlatformToKotlinClassMap platformToKotlinClassMap;
-    private final JavaPackageFragmentProviderImpl javaPackageFragmentProvider;
+    private final JavaPackageFragmentProvider javaPackageFragmentProvider;
     private final VirtualFileFinder virtualFileFinder;
     private final ModuleDescriptorImpl module;
     private final AnnotationResolver annotationResolver;
@@ -96,19 +85,8 @@ public class InjectorForLazyResolveWithJava {
     private final CandidateResolver candidateResolver;
     private final JetImportsFactory jetImportsFactory;
     private final ScopeProvider scopeProvider;
-    private final JavaClassResolver javaClassResolver;
-    private final JavaAnnotationResolver javaAnnotationResolver;
-    private final JavaAnnotationArgumentResolver javaAnnotationArgumentResolver;
-    private final JavaTypeTransformer javaTypeTransformer;
     private final DeserializedDescriptorResolver deserializedDescriptorResolver;
     private final AnnotationDescriptorDeserializer annotationDescriptorDeserializer;
-    private final JavaFunctionResolver javaFunctionResolver;
-    private final JavaTypeParameterResolver javaTypeParameterResolver;
-    private final JavaValueParameterResolver javaValueParameterResolver;
-    private final JavaMemberResolver javaMemberResolver;
-    private final JavaConstructorResolver javaConstructorResolver;
-    private final JavaPropertyResolver javaPropertyResolver;
-    private final JavaSupertypeResolver javaSupertypeResolver;
     
     public InjectorForLazyResolveWithJava(
         @NotNull Project project,
@@ -122,18 +100,19 @@ public class InjectorForLazyResolveWithJava {
         this.bindingTrace = bindingTrace;
         this.module = org.jetbrains.jet.lang.resolve.java.AnalyzerFacadeForJVM.createJavaModule("<fake-jdr-module>");
         this.resolveSession = new ResolveSession(project, globalContext, getModule(), declarationProviderFactory, bindingTrace);
-        this.javaDescriptorResolver = new JavaDescriptorResolver();
         this.storageManager = globalContext.getStorageManager();
-        this.callResolverExtensionProvider = new CallResolverExtensionProvider();
         this.javaClassFinder = new JavaClassFinderImpl();
+        this.psiBasedExternalAnnotationResolver = new PsiBasedExternalAnnotationResolver();
         this.traceBasedExternalSignatureResolver = new TraceBasedExternalSignatureResolver();
-        this.lazyResolveBasedCache = new LazyResolveBasedCache();
         this.traceBasedErrorReporter = new TraceBasedErrorReporter();
         this.psiBasedMethodSignatureChecker = new PsiBasedMethodSignatureChecker();
-        this.psiBasedExternalAnnotationResolver = new PsiBasedExternalAnnotationResolver();
-        this.platformToKotlinClassMap = module.getPlatformToKotlinClassMap();
-        this.javaPackageFragmentProvider = new JavaPackageFragmentProviderImpl();
+        this.lazyResolveBasedCache = new LazyResolveBasedCache();
+        this.deserializedDescriptorResolver = new DeserializedDescriptorResolver();
         this.virtualFileFinder = org.jetbrains.jet.lang.resolve.kotlin.VirtualFileFinder.SERVICE.getInstance(project);
+        this.javaDescriptorResolver = new JavaDescriptorResolver(storageManager, javaClassFinder, psiBasedExternalAnnotationResolver, traceBasedExternalSignatureResolver, traceBasedErrorReporter, psiBasedMethodSignatureChecker, lazyResolveBasedCache, deserializedDescriptorResolver, virtualFileFinder, getModule());
+        this.callResolverExtensionProvider = new CallResolverExtensionProvider();
+        this.platformToKotlinClassMap = module.getPlatformToKotlinClassMap();
+        this.javaPackageFragmentProvider = javaDescriptorResolver.getPackageFragmentProvider();
         this.annotationResolver = new AnnotationResolver();
         this.callResolver = new CallResolver();
         this.argumentTypeResolver = new ArgumentTypeResolver();
@@ -146,19 +125,7 @@ public class InjectorForLazyResolveWithJava {
         this.candidateResolver = new CandidateResolver();
         this.jetImportsFactory = new JetImportsFactory();
         this.scopeProvider = new ScopeProvider(getResolveSession());
-        this.javaClassResolver = new JavaClassResolver();
-        this.javaAnnotationResolver = new JavaAnnotationResolver();
-        this.javaAnnotationArgumentResolver = new JavaAnnotationArgumentResolver();
-        this.javaTypeTransformer = new JavaTypeTransformer();
-        this.deserializedDescriptorResolver = new DeserializedDescriptorResolver();
         this.annotationDescriptorDeserializer = new AnnotationDescriptorDeserializer(storageManager);
-        this.javaFunctionResolver = new JavaFunctionResolver();
-        this.javaTypeParameterResolver = new JavaTypeParameterResolver();
-        this.javaValueParameterResolver = new JavaValueParameterResolver();
-        this.javaMemberResolver = new JavaMemberResolver();
-        this.javaConstructorResolver = new JavaConstructorResolver();
-        this.javaPropertyResolver = new JavaPropertyResolver();
-        this.javaSupertypeResolver = new JavaSupertypeResolver();
 
         this.resolveSession.setAnnotationResolve(annotationResolver);
         this.resolveSession.setDescriptorResolver(descriptorResolver);
@@ -167,38 +134,17 @@ public class InjectorForLazyResolveWithJava {
         this.resolveSession.setScopeProvider(scopeProvider);
         this.resolveSession.setTypeResolver(typeResolver);
 
-        this.javaDescriptorResolver.setClassResolver(javaClassResolver);
-        this.javaDescriptorResolver.setDeserializedDescriptorResolver(deserializedDescriptorResolver);
-        this.javaDescriptorResolver.setErrorReporter(traceBasedErrorReporter);
-        this.javaDescriptorResolver.setExternalAnnotationResolver(psiBasedExternalAnnotationResolver);
-        this.javaDescriptorResolver.setExternalSignatureResolver(traceBasedExternalSignatureResolver);
-        this.javaDescriptorResolver.setJavaClassFinder(javaClassFinder);
-        this.javaDescriptorResolver.setJavaResolverCache(lazyResolveBasedCache);
-        this.javaDescriptorResolver.setKotlinClassFinder(virtualFileFinder);
-        this.javaDescriptorResolver.setModule(module);
-        this.javaDescriptorResolver.setPackageFragmentProvider(javaPackageFragmentProvider);
-        this.javaDescriptorResolver.setSignatureChecker(psiBasedMethodSignatureChecker);
-        this.javaDescriptorResolver.setStorageManager(storageManager);
-
         javaClassFinder.setProject(project);
 
-        traceBasedExternalSignatureResolver.setAnnotationResolver(javaAnnotationResolver);
+        traceBasedExternalSignatureResolver.setExternalAnnotationResolver(psiBasedExternalAnnotationResolver);
         traceBasedExternalSignatureResolver.setTrace(bindingTrace);
 
         lazyResolveBasedCache.setSession(resolveSession);
 
         traceBasedErrorReporter.setTrace(bindingTrace);
 
-        psiBasedMethodSignatureChecker.setAnnotationResolver(javaAnnotationResolver);
+        psiBasedMethodSignatureChecker.setExternalAnnotationResolver(psiBasedExternalAnnotationResolver);
         psiBasedMethodSignatureChecker.setExternalSignatureResolver(traceBasedExternalSignatureResolver);
-
-        javaPackageFragmentProvider.setCache(lazyResolveBasedCache);
-        javaPackageFragmentProvider.setDeserializedDescriptorResolver(deserializedDescriptorResolver);
-        javaPackageFragmentProvider.setJavaClassFinder(javaClassFinder);
-        javaPackageFragmentProvider.setJavaDescriptorResolver(javaDescriptorResolver);
-        javaPackageFragmentProvider.setKotlinClassFinder(virtualFileFinder);
-        javaPackageFragmentProvider.setMemberResolver(javaMemberResolver);
-        javaPackageFragmentProvider.setModule(module);
 
         annotationResolver.setCallResolver(callResolver);
         annotationResolver.setExpressionTypingServices(expressionTypingServices);
@@ -237,27 +183,6 @@ public class InjectorForLazyResolveWithJava {
 
         jetImportsFactory.setProject(project);
 
-        javaClassResolver.setAnnotationResolver(javaAnnotationResolver);
-        javaClassResolver.setCache(lazyResolveBasedCache);
-        javaClassResolver.setDeserializedDescriptorResolver(deserializedDescriptorResolver);
-        javaClassResolver.setFunctionResolver(javaFunctionResolver);
-        javaClassResolver.setJavaClassFinder(javaClassFinder);
-        javaClassResolver.setKotlinClassFinder(virtualFileFinder);
-        javaClassResolver.setMemberResolver(javaMemberResolver);
-        javaClassResolver.setPackageFragmentProvider(javaPackageFragmentProvider);
-        javaClassResolver.setSupertypesResolver(javaSupertypeResolver);
-        javaClassResolver.setTypeParameterResolver(javaTypeParameterResolver);
-
-        javaAnnotationResolver.setArgumentResolver(javaAnnotationArgumentResolver);
-        javaAnnotationResolver.setClassResolver(javaClassResolver);
-        javaAnnotationResolver.setExternalAnnotationResolver(psiBasedExternalAnnotationResolver);
-
-        javaAnnotationArgumentResolver.setAnnotationResolver(javaAnnotationResolver);
-        javaAnnotationArgumentResolver.setClassResolver(javaClassResolver);
-        javaAnnotationArgumentResolver.setTypeTransformer(javaTypeTransformer);
-
-        javaTypeTransformer.setClassResolver(javaClassResolver);
-
         deserializedDescriptorResolver.setAnnotationDeserializer(annotationDescriptorDeserializer);
         deserializedDescriptorResolver.setErrorReporter(traceBasedErrorReporter);
         deserializedDescriptorResolver.setJavaDescriptorResolver(javaDescriptorResolver);
@@ -267,39 +192,6 @@ public class InjectorForLazyResolveWithJava {
         annotationDescriptorDeserializer.setErrorReporter(traceBasedErrorReporter);
         annotationDescriptorDeserializer.setJavaDescriptorResolver(javaDescriptorResolver);
         annotationDescriptorDeserializer.setKotlinClassFinder(virtualFileFinder);
-
-        javaFunctionResolver.setAnnotationResolver(javaAnnotationResolver);
-        javaFunctionResolver.setCache(lazyResolveBasedCache);
-        javaFunctionResolver.setErrorReporter(traceBasedErrorReporter);
-        javaFunctionResolver.setExternalSignatureResolver(traceBasedExternalSignatureResolver);
-        javaFunctionResolver.setSignatureChecker(psiBasedMethodSignatureChecker);
-        javaFunctionResolver.setTypeParameterResolver(javaTypeParameterResolver);
-        javaFunctionResolver.setTypeTransformer(javaTypeTransformer);
-        javaFunctionResolver.setValueParameterResolver(javaValueParameterResolver);
-
-        javaTypeParameterResolver.setTypeTransformer(javaTypeTransformer);
-
-        javaValueParameterResolver.setAnnotationResolver(javaAnnotationResolver);
-        javaValueParameterResolver.setTypeTransformer(javaTypeTransformer);
-
-        javaMemberResolver.setClassResolver(javaClassResolver);
-        javaMemberResolver.setConstructorResolver(javaConstructorResolver);
-        javaMemberResolver.setFunctionResolver(javaFunctionResolver);
-        javaMemberResolver.setPropertyResolver(javaPropertyResolver);
-
-        javaConstructorResolver.setCache(lazyResolveBasedCache);
-        javaConstructorResolver.setExternalSignatureResolver(traceBasedExternalSignatureResolver);
-        javaConstructorResolver.setTypeTransformer(javaTypeTransformer);
-        javaConstructorResolver.setValueParameterResolver(javaValueParameterResolver);
-
-        javaPropertyResolver.setAnnotationResolver(javaAnnotationResolver);
-        javaPropertyResolver.setCache(lazyResolveBasedCache);
-        javaPropertyResolver.setErrorReporter(traceBasedErrorReporter);
-        javaPropertyResolver.setExternalSignatureResolver(traceBasedExternalSignatureResolver);
-        javaPropertyResolver.setTypeTransformer(javaTypeTransformer);
-
-        javaSupertypeResolver.setClassResolver(javaClassResolver);
-        javaSupertypeResolver.setTypeTransformer(javaTypeTransformer);
 
         javaClassFinder.initialize();
 

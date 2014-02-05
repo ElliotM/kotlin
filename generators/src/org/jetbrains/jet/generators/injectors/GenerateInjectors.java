@@ -127,7 +127,7 @@ public class GenerateInjectors {
 
         generator.addField(false, PlatformToKotlinClassMap.class, null, new GivenExpression("module.getPlatformToKotlinClassMap()"));
 
-        generator.addField(JavaPackageFragmentProviderImpl.class);
+        generator.addField(false, JavaPackageFragmentProvider.class, null, new GivenExpression("javaDescriptorResolver.getPackageFragmentProvider()"));
         generator.addField(false, VirtualFileFinder.class, "virtualFileFinder",
                            new GivenExpression(VirtualFileFinder.class.getName() + ".SERVICE.getInstance(project)"));
 
