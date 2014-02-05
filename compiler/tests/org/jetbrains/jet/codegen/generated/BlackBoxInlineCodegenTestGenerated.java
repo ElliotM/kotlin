@@ -196,6 +196,11 @@ public class BlackBoxInlineCodegenTestGenerated extends AbstractBlackBoxCodegenT
         doTestMultiFile("compiler/testData/codegen/boxInline/tryCatchFinally");
     }
     
+    @TestMetadata("tryCatchFinally2")
+    public void testTryCatchFinally2() throws Exception {
+        doTestMultiFile("compiler/testData/codegen/boxInline/tryCatchFinally2");
+    }
+    
     @TestMetadata("use")
     public void testUse() throws Exception {
         doTestMultiFile("compiler/testData/codegen/boxInline/use");

@@ -196,6 +196,11 @@ public class CompileKotlinAgainstInlineKotlinTestGenerated extends AbstractCompi
         doBoxTest("compiler/testData/codegen/boxInline/tryCatchFinally");
     }
     
+    @TestMetadata("tryCatchFinally2")
+    public void testTryCatchFinally2() throws Exception {
+        doBoxTest("compiler/testData/codegen/boxInline/tryCatchFinally2");
+    }
+    
     @TestMetadata("use")
     public void testUse() throws Exception {
         doBoxTest("compiler/testData/codegen/boxInline/use");
