@@ -80,7 +80,7 @@ public class InjectorForLazyResolve {
         this.bindingTrace = bindingTrace;
         this.resolveSession = new ResolveSession(project, globalContext, moduleDescriptor, declarationProviderFactory, bindingTrace);
         this.callResolverExtensionProvider = new CallResolverExtensionProvider();
-        this.storageManager = resolveSession.getStorageManager();
+        this.storageManager = globalContext.getStorageManager();
         this.platformToKotlinClassMap = moduleDescriptor.getPlatformToKotlinClassMap();
         this.annotationResolver = new AnnotationResolver();
         this.callResolver = new CallResolver();
