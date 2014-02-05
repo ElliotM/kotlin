@@ -14,40 +14,40 @@ fun test1() : Int {
     return result
 }
 
+fun test11() : Int {
+    val inlineX = My(111)
+    val res = inlineX.perform<My, Int>{
+        try {
+            throw RuntimeException()
+        } catch (e: RuntimeException) {
+            -1
+        }
+    }
+
+    return res
+}
+
 fun test2() : Int {
     try {
         val inlineX = My(111)
         var result = 0
         val res = inlineX.perform<My, Int>{
-            throw RuntimeException()
+            try {
+                throw RuntimeException("-1")
+            } catch (e: RuntimeException) {
+                throw RuntimeException("-2")
+            }
         }
         return result
-    } catch (e: Exception) {
-        return -1
+    } catch (e: RuntimeException) {
+        return e.getMessage()!!.toInt()!!
     }
-}
-
-inline fun execute() : Int {
-    try {
-        val inlineX = My(111)
-        var result = 0
-        val res = inlineX.perform<My, Int>{
-            throw RuntimeException()
-        }
-        return result
-    } catch (e: Exception) {
-        return -1
-    }
-}
-
-fun test3() : Int {
-    return execute()
 }
 
 fun box(): String {
     if (test1() != -1) return "test1: ${test1()}"
-    if (test2() != -1) return "test2: ${test2()}"
-    if (test3() != -1) return "test3: ${test3()}"
+    if (test11() != -1) return "test11: ${test11()}"
+    if (test2() != -2) return "test2: ${test2()}"
 
     return "OK"
 }
