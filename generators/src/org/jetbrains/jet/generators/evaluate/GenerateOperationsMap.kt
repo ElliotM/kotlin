@@ -26,6 +26,8 @@ import java.util.Collections
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor
 import org.jetbrains.jet.lang.types.TypeUtils
 import org.jetbrains.jet.lang.types.JetType
+import org.jetbrains.jet.lang.descriptors.CallableMemberDescriptor
+import org.jetbrains.jet.lang.descriptors.CallableMemberDescriptor.Kind
 
 val DEST_FILE: File = File("compiler/frontend/src/org/jetbrains/jet/lang/evaluate/OperationsMapGenerated.kt")
 private val EXCLUDED_FUNCTIONS = listOf("rangeTo", "hashCode", "inc", "dec")
@@ -56,8 +58,11 @@ fun generate(): String {
 
     for (descriptor in allPrimitiveTypes + builtIns.getString()) {
         [suppress("UNCHECKED_CAST")]
-        val functions = descriptor.getMemberScope(Collections.emptyList()).getAllDescriptors()
-                .filter { it is FunctionDescriptor && !EXCLUDED_FUNCTIONS.contains(it.getName().asString()) } as List<FunctionDescriptor>
+        val functions = descriptor.getMemberScope(Collections.emptyList()).getAllDescriptors().filter {
+            it is FunctionDescriptor &&
+            it.getKind() != CallableMemberDescriptor.Kind.FAKE_OVERRIDE &&
+            !EXCLUDED_FUNCTIONS.contains(it.getName().asString())
+        } as List<FunctionDescriptor>
 
         for (function in functions) {
             val parametersTypes = function.getParametersTypes()
