@@ -40,9 +40,9 @@ import com.intellij.psi.impl.source.tree.PsiErrorElementImpl
 
 public class ReplaceGetWithBracketsIntention : JetSelfTargetingIntention<JetCallExpression>(
         "replace.get.with.brackets", javaClass()
-) {
+){
     override fun isApplicableTo(element: JetCallExpression): Boolean {
-        if (element.getParent() !is JetDotQualifiedExpression) {
+        if (element.getParent() !is JetDotQualifiedExpression){
             return false // ignore orphan get functions
         }
 
@@ -50,18 +50,18 @@ public class ReplaceGetWithBracketsIntention : JetSelfTargetingIntention<JetCall
         val arguments = element.getValueArguments()
         val lastNode = element.getNode().getLastChildNode()?.getLastChildNode()
 
-        if (lastNode is PsiErrorElementImpl) {
+        if (lastNode is PsiErrorElementImpl){
             return false
         }
 
 
         for (arg in arguments){
-            if ((arg?.isNamed() ?: false)){ //Named arguments are invalid
+            if (arg?.isNamed() ?: false){ //Named arguments are inapplicable for brackets
                 return false
             }
         }
 
-        return (calleeExpression.textMatches("get") && !arguments.isEmpty()) //Check that function text matches 'get' and we have 1+ args
+        return calleeExpression.textMatches("get") && !arguments.isEmpty() //Check that function text matches 'get' and we have 1+ args
     }
 
     override fun applyTo(element: JetCallExpression, editor: Editor) {
@@ -72,7 +72,7 @@ public class ReplaceGetWithBracketsIntention : JetSelfTargetingIntention<JetCall
         val args = element.getValueArgumentList()?.getText()
         assert(args != null, "Argument list cannot be null, should be checked in isApplicableTo")
 
-        val trimmedArgs = args!!.substring(1, args.length-1)        //remove leading and trailing parentheses
+        val trimmedArgs = args!!.substring(1, args.length - 1)        //remove leading and trailing parentheses
         val exp = JetPsiFactory.createExpression(element.getProject(), "$prefix[$trimmedArgs]")
 
         editor.getCaretModel().moveToOffset(element.getTextOffset())
