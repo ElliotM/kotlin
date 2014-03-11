@@ -175,7 +175,11 @@ public abstract class AbstractCodeTransformationTest extends LightCodeInsightTes
         doTestIntention(path, new AddBracesIntention());
     }
 
-    public void doTestReplaceGetIntention(@NotNull String path) throws Exception {
+    public void doTestConvertNegatedBooleanSequence(@NotNull String path) throws Exception {
+		 doTestIntention(path, new ConvertNegatedBooleanSequenceIntention());
+	}
+
+	public void doTestReplaceGetIntention(@NotNull String path) throws Exception {
         doTestIntention(path, new TestableReplaceGetIntention());
     }
 
